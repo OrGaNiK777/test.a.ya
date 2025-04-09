@@ -23,9 +23,11 @@ const App = () => {
 			<div>
 				<Navbar cartCount={cartItems.length} />
 				<Routes>
+					<Route basename='/test.a.ya'>
 						<Route path='/' element={<ProductList />} />
 						<Route path='/product/:id' element={<ProductDetail addToCart={addToCart} />} />
 						<Route path='/cart' element={<Cart cartItems={cartItems} removeFromCart={removeFromCart} />} />
+					</Route>
 				</Routes>
 			</div>
 		</Router>
