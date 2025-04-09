@@ -6,7 +6,7 @@ const Cart = ({ cartItems, removeFromCart }) => {
     const navigate = useNavigate();
 
     const handleGoBack = () => {
-        navigate('/');
+        navigate(`${process.env.PUBLIC_URL}`);
     };
 
     return (
