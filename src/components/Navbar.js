@@ -5,7 +5,7 @@ import '../styles/Navbar.css';
 const Navbar = ({ cartCount }) => {
   return (
     <nav className="navbar">
-      <Link to="/">Список товаров</Link>
+      <Link to="/test.a.ya">Список товаров</Link>
       <Link to="/cart">Корзина ({cartCount})</Link>
     </nav>
   );
