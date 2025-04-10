@@ -1,120 +1,126 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { getProduct, getSizes } from '../services/api'
-import { useParams, Link } from 'react-router-dom'
-import '../styles/ProductDetail.css'
+import { useCart } from '../context/CartContext'
+import Slider from 'react-slick'
 
-const ProductDetail = ({ addToCart }) => {
+const ProductDetail = () => {
 	const { id } = useParams()
+	const navigate = useNavigate()
 	const [product, setProduct] = useState(null)
 	const [sizes, setSizes] = useState([])
-	const [selectedColor, setSelectedColor] = useState(null)
-	const [selectedSize, setSelectedSize] = useState(null)
-	const [currentImageIndex, setCurrentImageIndex] = useState(0)
-	const [isModalOpen, setIsModalOpen] = useState(false)
+	const [selectedSizes, setSelectedSizes] = useState({})
+	const { dispatch } = useCart()
 
 	useEffect(() => {
-		const fetchProductAndSizes = async () => {
+		const fetchProduct = async () => {
 			try {
-				const [productData, sizesData] = await Promise.all([getProduct(parseInt(id)), getSizes()])
+				const productData = await getProduct(id)
 				setProduct(productData)
-				setSizes(sizesData)
-				setSelectedColor(productData.colors[0])
-
-				setSelectedSize(productData.colors[0].sizes[0] || null)
 			} catch (error) {
-				console.error('Ошибка при загрузке:', error)
+				console.error(error)
 			}
 		}
 
-		fetchProductAndSizes()
+		const fetchSizes = async () => {
+			try {
+				const sizesData = await getSizes()
+				setSizes(sizesData)
+			} catch (error) {
+				console.error(error)
+			}
+		}
+
+		fetchProduct()
+		fetchSizes()
 	}, [id])
 
-	if (!product) return <p>Загрузка...</p>
+	const handleAddToCart = (color) => {
+		const selectedSize = selectedSizes[color.id]
 
-	const handleAddToCart = () => {
-		let size = 0
-		sizes.forEach((item) => {
-			if (selectedSize === item.id) {
-				size = item.label
-			}
+		dispatch({
+			type: 'ADD_TO_CART',
+			payload: {
+				product: product.name,
+				color,
+				size: sizes.find((size) => size.id === selectedSize),
+				productId: id,
+			},
 		})
-		addToCart({ ...product, selectedColor, size })
+		setSelectedSizes({})
 	}
 
-	const handleColorChange = (color) => {
-		setSelectedColor(color)
-		setSelectedSize(color.sizes[0] || null)
-	}
-
-	const handleNextImage = () => {
-		if (selectedColor.images.length > 0) {
-			setCurrentImageIndex((prevIndex) => (prevIndex + 1) % selectedColor.images.length)
-		}
-	}
-
-	const handlePrevImage = () => {
-		if (selectedColor.images.length > 0) {
-			setCurrentImageIndex((prevIndex) => (prevIndex - 1 + selectedColor.images.length) % selectedColor.images.length)
-		}
-	}
-	const openModal = () => {
-		setIsModalOpen(true)
-	}
-
-	const closeModal = () => {
-		setIsModalOpen(false)
-	}
-	return (
-		<div className='product-detail'>
-			<div className='image-controls'>
-				<button onClick={handlePrevImage} disabled={selectedColor.images.length <= 1}>
-					❮
-				</button>
-				<img src={selectedColor.images[currentImageIndex]} alt={product.name} className='product-detail-image' onClick={openModal} />
-				<button onClick={handleNextImage} disabled={selectedColor.images.length <= 1}>
-					❯
-				</button>
+	if (!product || sizes.length === 0)
+		return (
+			<div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
+				<div className='spinner-border' role='status'>
+					<span className='visually-hidden'>Загрузка...</span>
+				</div>
 			</div>
+		)
 
-			<h1>{product.name}</h1>
-			<h3>Цена: {selectedColor.price} руб.</h3>
-			<p>{selectedColor.description}</p>
-			<h3>Выбор цвета</h3>
-			<div className='color-selection'>
+	const settings = {
+		dots: true,
+		infinite: true,
+		speed: 500,
+		slidesToShow: 1,
+		slidesToScroll: 1,
+	}
+
+	return (
+		<div className='container'>
+			<h1 className=' text-center'>{product.name}</h1>
+			<button className='btn btn-secondary mb-3' onClick={() => navigate(-1)}>
+				Назад
+			</button>
+			<div className='row mt-3'>
 				{product.colors.map((color) => (
-					<button key={color.id} className={`color-button ${selectedColor.id === color.id ? 'active' : ''}`} onClick={() => handleColorChange(color)}>
-						{color.name}
-					</button>
+					<div key={color.id} className='col-md-4 mb-3'>
+						<div className='card'>
+							<div className='position-relative'>
+								<Slider {...settings}>
+									{color.images.map((image, index) => (
+										<div key={index}>
+											<img src={image} className='img-fluid card-img-top' alt={color.name} />
+										</div>
+									))}
+								</Slider>
+							</div>
+							<div className='card-body text-center'>
+								<p className='card-text'>
+									Цвет: <strong>{color.name}</strong>
+								</p>
+								<p className='card-text'>
+									Цена: <strong>{color.price} р.</strong>
+								</p>
+								<p className='card-text'>{color.description}</p>
+								<h4>Выберите размер:</h4>
+								{sizes.map((size) => (
+									<button
+										key={size.id}
+										className={`btn ${selectedSizes[color.id] === size.id ? 'btn-success' : 'btn-outline-secondary'} me-2`}
+										onClick={() => {
+											if (color.sizes.includes(size.id)) {
+												setSelectedSizes((prevSizes) => ({
+													...prevSizes,
+													[color.id]: size.id,
+												}))
+											}
+										}}
+										disabled={!color.sizes.includes(size.id)}
+									>
+										{size.label}
+									</button>
+								))}
+
+								<button className='btn btn-primary mt-3' onClick={() => handleAddToCart(color)} disabled={!selectedSizes[color.id]}>
+									Добавить в корзину
+								</button>
+							</div>
+						</div>
+					</div>
 				))}
 			</div>
-			<h3>Выбор размера</h3>
-			<div className='size-selection'>
-				{sizes.map((size) => {
-					const isAvailable = selectedColor.sizes.includes(size.id)
-					return (
-						<button key={size.id} className={`size-button ${selectedSize === size.id ? 'active' : ''}`} onClick={() => isAvailable && setSelectedSize(size.id)} disabled={!isAvailable}>
-							{size.label}
-						</button>
-					)
-				})}
-			</div>
-
-			<button className='add-to-cart-button' onClick={handleAddToCart}>
-				Добавить в корзину
-			</button>
-			<Link className='back-button' to={`${process.env.PUBLIC_URL}`}>
-				Назад
-			</Link>
-			{isModalOpen && (
-				<div className='modal-overlay' onClick={closeModal}>
-					<div className='modal-content' onClick={(e) => e.stopPropagation()}>
-						<span className='close-button' onClick={closeModal}>
-							&times;
-						</span>
-						<img src={selectedColor.images[currentImageIndex]} alt={product.name + ' ' + selectedColor.name} className='modal-image' />
-					</div>
-				</div>
-			)}
 		</div>
 	)
 }

@@ -1,4 +1,4 @@
-const sizes = [
+export const sizes = [
 	{ id: 1, label: 'XS', number: 44 },
 	{ id: 2, label: 'S', number: 46 },
 	{ id: 3, label: 'M', number: 48 },

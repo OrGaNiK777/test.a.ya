@@ -1,44 +1,61 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom'; 
-import '../styles/Cart.css';
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useCart } from '../context/CartContext'
 
-const Cart = ({ cartItems, removeFromCart }) => {
-    const navigate = useNavigate();
+const Cart = () => {
+	const { state, dispatch } = useCart()
+	const navigate = useNavigate()
 
-    const handleGoBack = () => {
-        navigate(`${process.env.PUBLIC_URL}`);
-    };
+	const handleRemoveFromCart = (itemToRemove) => {
+		dispatch({ type: 'REMOVE_FROM_CART', payload: itemToRemove })
+	}
+	return (
+		<div className='container my-4'>
+			<h1 className='mb-4 text-center'>Корзина</h1>
+			<button className='btn btn-secondary mb-3' onClick={() => navigate(-1)}>
+				Назад
+			</button>
+			{state.items.length === 0 ? (
+				<div className='alert alert-info text-center' role='alert'>
+					Корзина пуста
+				</div>
+			) : (
+				<div className='row'>
+					{state.items.map((item, index) => (
+						<div key={`cart-item-${index}`} className='col-md-4 mb-4'>
+							<div className='card shadow-sm border-light rounded'>
+								<div className='d-flex flex-column align-items-center p-3'>
+									{item.color.images && <img src={item.color.images[0]} className='img-fluid rounded-start' alt={item.color.name} />}
+									<div className='card-body text-center'>
+										<h5 className='card-title'>{item.product}</h5>
+										<p className='card-text mb-1'>
+											Цвет: <strong>{item.color.name}</strong>
+										</p>
+										<p className='card-text mb-1'>
+											Цена: <strong>{item.color.price} р.</strong>
+										</p>
+										<p className='card-text mb-1'>
+											Размер: <strong>{item.size.label}</strong>
+										</p>
+									</div>
+									<div className='d-flex justify-content-center mb-3'>
+										<button className='btn btn-outline-danger px-4' onClick={() => handleRemoveFromCart(item)}>
+											Удалить
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					))}
+				</div>
+			)}
+			<div className='text-center mt-4'>
+				<h4>
+					Итого: <strong>{state.items.reduce((total, item) => total + item.color.price, 0)} р.</strong>
+				</h4>
+			</div>
+		</div>
+	)
+}
 
-    return (
-        <div className="cart">
-            <h1>Корзина</h1>
-            {cartItems.length === 0 ? (
-                <p>Корзина пуста</p>
-            ) : (
-                <ul>
-                    {cartItems.map((item, index) => (
-                        <li key={index} className="cart-item">
-                            <div className="cart-item-details">
-                                <img
-                                    src={item.selectedColor.images[0]}
-                                    alt={item.name}
-                                    className="cart-item-image"
-                                />
-                                <div className="cart-item-info">
-                                    <h3>{item.name}</h3>
-                                    <p>Цвет: {item.selectedColor.name}</p>
-                                    <p>Размер: {item.size}</p>
-                                    <p>Цена: {item.selectedColor.price} руб.</p>
-                                    <button className="remove-button" onClick={() => removeFromCart(index)}>Удалить</button>
-                                </div>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-            )}
-            <button className="back-button" onClick={handleGoBack}>Назад</button>
-        </div>
-    );
-};
-
-export default Cart;
+export default Cart
