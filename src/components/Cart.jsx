@@ -51,7 +51,7 @@ const Cart = () => {
 			)}
 			<div className='text-center mt-4'>
 				<h4>
-					Итого: <strong>{state.items.reduce((total, item) => total + item.color.price, 0)} р.</strong>
+					Итого: <strong>{state.items.reduce((total, item) => total + Number(item.color.price), 0)} р.</strong>
 				</h4>
 			</div>
 		</div>
